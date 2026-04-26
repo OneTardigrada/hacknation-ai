@@ -10,6 +10,17 @@
 
 ---
 
+## Demo videos
+
+| Product walkthrough | Tech stack walkthrough |
+|--|--|
+| <video src="https://github.com/OneTardigrada/hacknation-ai/raw/main/mylo.mp4" controls width="400"></video> | <video src="https://github.com/OneTardigrada/hacknation-ai/raw/main/techfin.mp4" controls width="400"></video> |
+| [▶ mylo.mp4](mylo.mp4) — full product demo | [▶ techfin.mp4](techfin.mp4) — architecture & tech stack |
+
+> **Note:** GitHub renders `<video>` tags only when the file is served from `raw.githubusercontent.com` (i.e. after the repo is pushed). If you're viewing this README locally, click the `▶` links to open the files directly.
+
+---
+
 ## What is Mylo?
 
 Local cafés sit empty at 3 PM and overcrowded at 1 PM. Coupons don't fix that — **context** does.
@@ -175,7 +186,6 @@ The boardgame view uses MapLibre with a custom raster style. If your network blo
 ## Static reference pages
 
 Once the dev server is running:
-
 - **Tech stack architecture:** [http://localhost:3000/tech-stack.html](http://localhost:3000/tech-stack.html)
 
 You can also open these HTML files directly from disk via `file://` — no server required.
