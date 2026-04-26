@@ -198,8 +198,3 @@ Mylo is built consent-first:
 
 This project was built for the 5th Hack-Nation hackathon. See repository for license details.
 
----
-
-## Credits
-
-Built by team **OneTardigrada** for [Hack-Nation 2026](https://github.com/OneTardigrada/hacknation-ai).
