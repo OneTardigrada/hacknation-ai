@@ -14,8 +14,8 @@
 
 | Product walkthrough | Tech stack walkthrough |
 |--|--|
-| <video src="https://github.com/OneTardigrada/hacknation-ai/raw/main/mylo.mp4" controls width="400"></video> | <video src="https://github.com/OneTardigrada/hacknation-ai/raw/main/techfin.mp4" controls width="400"></video> |
-| [▶ mylo.mp4](mylo.mp4) — full product demo | [▶ techfin.mp4](techfin.mp4) — architecture & tech stack |
+| [▶ Watch **mylo.mp4** on Google Drive](https://drive.google.com/file/d/1iA6pqh82vH3dodiIQQIgzWeMaSDWwb6S/view?usp=drive_link) | [▶ Watch **techfin.mp4** on Google Drive](https://drive.google.com/file/d/1ZVab0MFr7thWdX6meW4XAS0FfyGEkQo2/view?usp=drive_link) |
+| Full product demo — phone, tablet & city map in action | Architecture & tech stack walkthrough |
 
 > **Note:** GitHub renders `<video>` tags only when the file is served from `raw.githubusercontent.com` (i.e. after the repo is pushed). If you're viewing this README locally, click the `▶` links to open the files directly.
 
