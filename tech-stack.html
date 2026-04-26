@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mylo — Tech Stack Architecture</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --red: #E60000;
+    --red-dark: #C40000;
+    --bg: #0B0F1B;
+    --bg2: #131830;
+    --panel: #161B2E;
+    --panel-2: #1E2540;
+    --ink: #F4F5F8;
+    --sub: #9AA3B2;
+    --line: rgba(255,255,255,0.10);
+    --accent: #FF6B6B;
+    --green: #34D399;
+    --blue: #60A5FA;
+    --amber: #FBBF24;
+    --purple: #A78BFA;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+    background: radial-gradient(1200px 800px at 20% -10%, #1a2148 0%, transparent 60%),
+                radial-gradient(1000px 700px at 110% 110%, #2a1430 0%, transparent 55%),
+                linear-gradient(180deg, #0B0F1B 0%, #131830 100%);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 40px 28px 80px; }
+
+  header.brand {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 8px;
+  }
+  .mark {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: linear-gradient(135deg, #FF1F1F, #C40000);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 24px rgba(230,0,0,0.35);
+  }
+  .name { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; }
+  .meta { color: var(--sub); font-size: 13px; }
+  h1 {
+    font-size: 36px; font-weight: 900; letter-spacing: -0.025em;
+    margin: 18px 0 4px;
+  }
+  .subtitle { color: var(--sub); margin: 0 0 28px; font-size: 15px; }
+
+  /* ── Stack diagram ── */
+  .diagram {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .layer {
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 18px 20px 20px;
+    backdrop-filter: blur(6px);
+  }
+  .layer .head {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  }
+  .badge {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+    padding: 4px 10px; border-radius: 999px;
+    text-transform: uppercase;
+  }
+  .layer h2 {
+    margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em;
+  }
+  .layer .desc { color: var(--sub); font-size: 13px; margin-left: auto; max-width: 55%; text-align: right; }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 6px;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.18); }
+  .card .top { display: flex; align-items: center; gap: 10px; }
+  .ico {
+    width: 32px; height: 32px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .card .title { font-weight: 800; font-size: 14px; }
+  .card .sub { color: var(--sub); font-size: 12px; line-height: 1.45; }
+
+  /* Layer accent colors */
+  .layer.surfaces { border-color: rgba(96,165,250,0.25); }
+  .layer.surfaces .badge { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .layer.frontend { border-color: rgba(167,139,250,0.25); }
+  .layer.frontend .badge { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .layer.api { border-color: rgba(230,0,0,0.30); }
+  .layer.api .badge { background: rgba(230,0,0,0.18); color: #ff8a8a; }
+  .layer.domain { border-color: rgba(251,191,36,0.25); }
+  .layer.domain .badge { background: rgba(251,191,36,0.15); color: var(--amber); }
+  .layer.ai { border-color: rgba(52,211,153,0.25); }
+  .layer.ai .badge { background: rgba(52,211,153,0.15); color: var(--green); }
+  .layer.privacy { border-color: rgba(255,255,255,0.18); }
+  .layer.privacy .badge { background: rgba(255,255,255,0.10); color: #fff; }
+
+  /* Connector arrow between layers */
+  .arrow {
+    height: 22px;
+    display: flex; justify-content: center; align-items: center;
+    color: var(--sub);
+  }
+  .arrow svg { opacity: 0.55; }
+
+  /* Footer legend */
+  footer {
+    margin-top: 36px;
+    color: var(--sub); font-size: 12px; text-align: center;
+  }
+  footer code {
+    background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px;
+    color: #ddd; font-size: 11.5px;
+  }
+  a { color: #ff8a8a; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  @media print {
+    body { background: white; color: #111; }
+    .layer { background: #fff; border-color: #ccc; }
+    .card { background: #fafafa; border-color: #ddd; }
+    .card .sub, .meta, .subtitle, footer { color: #444; }
+    .arrow svg { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="brand">
+    <div class="mark">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s-7-4.5-7-11a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 6.5-7 11-7 11z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="name">Mylo</div>
+      <div class="meta">Generative City-Wallet — Tech Stack</div>
+    </div>
+  </header>
+
+  <h1>Architecture &amp; Tech Stack</h1>
+  <p class="subtitle">From the three user-facing surfaces down to the LLM and on-device privacy layer.</p>
+
+  <div class="diagram">
+
+    <!-- ── Layer 1: Surfaces ── -->
+    <section class="layer surfaces">
+      <div class="head">
+        <span class="badge">1 · Surfaces</span>
+        <h2>Three screens, one brain</h2>
+        <span class="desc">What the user, the merchant and stakeholders actually see.</span>
+      </div>
+      <div class="row">
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(96,165,250,0.18); color:var(--blue);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+            </div>
+            <div class="title">Consumer Phone</div>
+          </div>
+          <div class="sub">Single offer card, swipe-to-redeem, QR + cashback, FOMO countdown.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(96,165,250,0.18); color:var(--blue);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/></svg>
+            </div>
+            <div class="title">Merchant Tablet</div>
+          </div>
+          <div class="sub">Rule configurator, pre-order queue, quiet-hour chart, share-count.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(96,165,250,0.18); color:var(--blue);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 6 8 12 8 12s8-6 8-12a8 8 0 0 0-8-8z"/></svg>
+            </div>
+            <div class="title">City Boardgame Map</div>
+          </div>
+          <div class="sub">MapLibre view of geofences, merchants, live offer pulses.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(96,165,250,0.18); color:var(--blue);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M14 20c0-2 2-3.5 4-3.5s4 1.5 4 3.5"/></svg>
+            </div>
+            <div class="title">Wallet &amp; Friends</div>
+          </div>
+          <div class="sub">Wallet ID, transaction history, friends layer, share codes.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="arrow"><svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v18"/><path d="M5 14l7 7 7-7"/></svg></div>
+
+    <!-- ── Layer 2: Frontend ── -->
+    <section class="layer frontend">
+      <div class="head">
+        <span class="badge">2 · Frontend</span>
+        <h2>React 19 · Next.js App Router</h2>
+        <span class="desc">Streaming UI, glassmorphism, motion, SVG-only iconography.</span>
+      </div>
+      <div class="row">
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(167,139,250,0.18); color:var(--purple);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M3 21L21 3"/></svg>
+            </div>
+            <div class="title">Next.js 16</div>
+          </div>
+          <div class="sub">App Router, route handlers, server components, edge-ready.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(167,139,250,0.18); color:var(--purple);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+            </div>
+            <div class="title">React 19 + TypeScript</div>
+          </div>
+          <div class="sub">Strict types end-to-end, hooks for streaming state.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(167,139,250,0.18); color:var(--purple);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16c2-6 6-8 12-8"/><path d="M4 8c2 6 6 8 12 8"/></svg>
+            </div>
+            <div class="title">Tailwind CSS 4</div>
+          </div>
+          <div class="sub">Glassmorphism, Sparkassen-red token, responsive layout.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(167,139,250,0.18); color:var(--purple);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+            </div>
+            <div class="title">Framer Motion</div>
+          </div>
+          <div class="sub">Swipe gestures, card transitions, countdown animation.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(167,139,250,0.18); color:var(--purple);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </div>
+            <div class="title">Lucide React</div>
+          </div>
+          <div class="sub">100% SVG icons — no emoji, no raster.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(167,139,250,0.18); color:var(--purple);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9-9 9z"/></svg>
+            </div>
+            <div class="title">MapLibre GL</div>
+          </div>
+          <div class="sub">In-app map + city boardgame, custom raster style.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="arrow"><svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v18"/><path d="M5 14l7 7 7-7"/></svg></div>
+
+    <!-- ── Layer 3: API ── -->
+    <section class="layer api">
+      <div class="head">
+        <span class="badge">3 · API · Route Handlers</span>
+        <h2>Next.js <code>app/api/*</code></h2>
+        <span class="desc">Streaming endpoints between phone, tablet and the AI core.</span>
+      </div>
+      <div class="row">
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(230,0,0,0.20); color:#ff8a8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h10"/><path d="M4 17h16"/></svg>
+            </div>
+            <div class="title">/api/generate-offer</div>
+          </div>
+          <div class="sub">Streamed JSON LLM offer generation.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(230,0,0,0.20); color:#ff8a8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+            </div>
+            <div class="title">/api/merchant-stats</div>
+          </div>
+          <div class="sub">Quiet/busy hours, redemptions, share-count.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(230,0,0,0.20); color:#ff8a8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+            </div>
+            <div class="title">/api/preorder</div>
+          </div>
+          <div class="sub">Pre-order intent → merchant queue.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(230,0,0,0.20); color:#ff8a8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+            </div>
+            <div class="title">/api/redeem</div>
+          </div>
+          <div class="sub">QR redemption + cashback finalisation.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(230,0,0,0.20); color:#ff8a8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+            </div>
+            <div class="title">/api/wallet-id</div>
+          </div>
+          <div class="sub">Pseudonymous wallet token issuance.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(230,0,0,0.20); color:#ff8a8a;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>
+            </div>
+            <div class="title">/api/weather</div>
+          </div>
+          <div class="sub">OpenWeatherMap proxy + mock fallback.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="arrow"><svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v18"/><path d="M5 14l7 7 7-7"/></svg></div>
+
+    <!-- ── Layer 4: Domain logic ── -->
+    <section class="layer domain">
+      <div class="head">
+        <span class="badge">4 · Domain Logic · <code>lib/</code></span>
+        <h2>The context pipeline</h2>
+        <span class="desc">Pure TS modules — typed, testable, deterministic.</span>
+      </div>
+      <div class="row">
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6M12 17v6M4.2 4.2l4.3 4.3M15.5 15.5l4.3 4.3M1 12h6M17 12h6M4.2 19.8l4.3-4.3M15.5 8.5l4.3-4.3"/></svg>
+            </div>
+            <div class="title">context-engine.ts</div>
+          </div>
+          <div class="sub">Merges weather + hour + distance + goal → ContextSnapshot.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>
+            </div>
+            <div class="title">geofence.ts</div>
+          </div>
+          <div class="sub">Haversine distance, radius rings, enter/exit triggers.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v4H4z"/><path d="M4 12h10v8H4z"/><path d="M16 12h4v8h-4z"/></svg>
+            </div>
+            <div class="title">offer-prompt.ts</div>
+          </div>
+          <div class="sub">Renders system+user prompt with strict JSON schema.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></svg>
+            </div>
+            <div class="title">friends.ts</div>
+          </div>
+          <div class="sub">Opt-in social graph, share-code propagation.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+            </div>
+            <div class="title">wallet-id.ts</div>
+          </div>
+          <div class="sub">Pseudonymous token — never PII to merchants.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+            </div>
+            <div class="title">merchant-sim.ts</div>
+          </div>
+          <div class="sub">Live foot-traffic simulation for the boardgame.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l7-4 7 4V3z"/></svg>
+            </div>
+            <div class="title">scenarios.ts · personas.ts</div>
+          </div>
+          <div class="sub">Demo presets, time-machine, persona switching.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(251,191,36,0.18); color:var(--amber);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </div>
+            <div class="title">preorder.ts</div>
+          </div>
+          <div class="sub">Pre-order state machine, queue + ETA.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="arrow"><svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v18"/><path d="M5 14l7 7 7-7"/></svg></div>
+
+    <!-- ── Layer 5: AI ── -->
+    <section class="layer ai">
+      <div class="head">
+        <span class="badge">5 · AI Core</span>
+        <h2>Streaming generation</h2>
+        <span class="desc">Cloud LLM today, on-device SLM path tomorrow.</span>
+      </div>
+      <div class="row">
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(52,211,153,0.18); color:var(--green);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v0a4 4 0 0 1-1 7 4 4 0 0 1-7 0 4 4 0 0 1-1-7v0a4 4 0 0 1 4-4z"/><path d="M9 13v5M15 13v5"/></svg>
+            </div>
+            <div class="title">OpenAI · GPT</div>
+          </div>
+          <div class="sub">Streaming JSON tokens → progressive offer card.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(52,211,153,0.18); color:var(--green);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c4 0 4-6 8-6s4 12 8 12"/></svg>
+            </div>
+            <div class="title">useStreamingOffer hook</div>
+          </div>
+          <div class="sub">Parses partial JSON, renders headline → discount → timer.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(52,211,153,0.18); color:var(--green);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg>
+            </div>
+            <div class="title">slm-layer.ts</div>
+          </div>
+          <div class="sub">On-device small-language-model path for full privacy.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(52,211,153,0.18); color:var(--green);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4z"/><path d="M4 14h16v6H4z"/></svg>
+            </div>
+            <div class="title">Deterministic fallback</div>
+          </div>
+          <div class="sub">No API key? Demo still runs — rule-based offer pipeline.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="arrow"><svg width="24" height="22" viewBox="0 0 24 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v18"/><path d="M5 14l7 7 7-7"/></svg></div>
+
+    <!-- ── Layer 6: Privacy / Trust ── -->
+    <section class="layer privacy">
+      <div class="head">
+        <span class="badge">6 · Privacy &amp; Trust</span>
+        <h2>Bank-grade by design</h2>
+        <span class="desc">Consent-first, GDPR-konform, pseudonymous, on-device-ready.</span>
+      </div>
+      <div class="row">
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(255,255,255,0.10); color:#fff;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6z"/></svg>
+            </div>
+            <div class="title">Consent toggles</div>
+          </div>
+          <div class="sub">Location, weather, transactions, friends — each opt-in.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(255,255,255,0.10); color:#fff;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+            </div>
+            <div class="title">Pseudonymous Wallet ID</div>
+          </div>
+          <div class="sub">Merchants see a token, never a name.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(255,255,255,0.10); color:#fff;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </div>
+            <div class="title">Data minimisation</div>
+          </div>
+          <div class="sub">Only 4 signals reach the LLM — no PII, no history.</div>
+        </div>
+        <div class="card">
+          <div class="top">
+            <div class="ico" style="background:rgba(255,255,255,0.10); color:#fff;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l3-3h12l3 3v12l-3 3H6l-3-3z"/><path d="M9 12h6"/></svg>
+            </div>
+            <div class="title">Right to erasure</div>
+          </div>
+          <div class="sub">One tap clears history + share-graph.</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    Mylo — Generative City-Wallet · 5th Hack-Nation submission · Sparkassen red <code>#E60000</code><br/>
+    <a href="https://github.com/OneTardigrada/hacknation-ai">github.com/OneTardigrada/hacknation-ai</a>
+  </footer>
+
+</div>
+</body>
+</html>
