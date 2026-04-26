@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { Check, CreditCard } from "lucide-react";
 import { generateOfferToken } from "@/lib/wallet-id";
 
 interface CashbackRedemptionProps {
@@ -30,7 +31,9 @@ export function CashbackRedemption({ merchantName, discountValue, expiryMinutes,
     >
       {done ? (
         <div className="text-center space-y-3 py-4">
-          <span className="text-5xl">✅</span>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "#22c55e" }}>
+            <Check size={32} className="text-white" strokeWidth={2.5} />
+          </div>
           <p className="text-xl font-bold text-gray-900">Gutschrift unterwegs!</p>
           <p className="text-sm text-gray-500">
             {discountValue} werden auf deine Sparkassen-Card gutgeschrieben.
@@ -42,7 +45,9 @@ export function CashbackRedemption({ merchantName, discountValue, expiryMinutes,
       ) : (
         <>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">✅</span>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3" style={{ background: "#22c55e" }}>
+              <Check size={16} className="text-white" strokeWidth={2.5} />
+            </div>
             <div>
               <p className="font-bold text-gray-900">Angebot aktiviert!</p>
               <p className="text-xs text-gray-500">Gültig bei {merchantName}</p>

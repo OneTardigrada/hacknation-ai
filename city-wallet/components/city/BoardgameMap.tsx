@@ -486,7 +486,7 @@ export function BoardgameMap({
         onPointerDown={(e) => e.stopPropagation()}
       >
         <Maximize2 size={12} className="text-gray-500" />
-        <span className="text-[10px] font-bold text-gray-700">City Wallet · Boardgame View</span>
+        <span className="text-[10px] font-bold text-gray-700">Mylo · Boardgame View</span>
       </div>
 
       {/* ─────────── Top-right "Demo+" Friends button ─────────── */}

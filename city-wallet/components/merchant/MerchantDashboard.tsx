@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import { Store, TrendingUp, Zap, Wallet } from "lucide-react";
 import { QuietHourChart } from "./QuietHourChart";
 import { RuleConfigurator } from "./RuleConfigurator";
@@ -20,6 +19,8 @@ interface MerchantDashboardProps {
   onRulesChange: (r: MerchantRules) => void;
   preOrders: PreOrder[];
   offerFiredAt?: number;
+  onGenerateOffer?: () => void;
+  generating?: boolean;
 }
 
 // ─── Design tokens (single source of truth for the merchant tablet UI) ───
@@ -35,6 +36,7 @@ export function MerchantDashboard({
   merchant, hourlyData, currentHour,
   acceptCount, dismissCount, revenueRecovered, offerCount,
   rules, onRulesChange, preOrders, offerFiredAt,
+  onGenerateOffer, generating = false,
 }: MerchantDashboardProps) {
   const total = acceptCount + dismissCount;
   const acceptRate = total > 0 ? Math.round((acceptCount / total) * 100) : 0;
@@ -50,21 +52,24 @@ export function MerchantDashboard({
         }}
       >
         <div className="relative w-full" style={{ height: 168 }}>
-          {merchant.heroImage ? (
-            <Image
-              src={merchant.heroImage}
-              alt={merchant.name}
-              fill
-              sizes="480px"
-              className="object-cover"
-              unoptimized
-            />
-          ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(135deg,#FFE4E6,#FECACA)" }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
             <div
-              className="absolute inset-0"
-              style={{ background: "linear-gradient(135deg,#FFE4E6,#FECACA)" }}
-            />
-          )}
+              className="flex items-center justify-center rounded-full"
+              style={{
+                width: 84,
+                height: 84,
+                background: "rgba(255,255,255,0.55)",
+                boxShadow: "inset 0 0 0 1px rgba(230,0,0,0.18)",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <Store size={40} strokeWidth={1.75} color="#E60000" />
+            </div>
+          </div>
           <div
             className="absolute inset-0"
             style={{ background: "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.72) 100%)" }}
@@ -195,6 +200,23 @@ export function MerchantDashboard({
         <p className={SECTION_TITLE_CLASS}>Bestellungen</p>
         <PreOrderQueue orders={preOrders} />
       </div>
+
+      {/* ─── Primary CTA: fire an offer for this merchant ─── */}
+      {onGenerateOffer && (
+        <button
+          onClick={onGenerateOffer}
+          disabled={generating}
+          className="w-full rounded-2xl py-4 flex items-center justify-center gap-2 text-white text-[14px] font-bold transition-opacity disabled:opacity-60"
+          style={{
+            background: "#E60000",
+            boxShadow: "0 8px 22px rgba(230,0,0,0.28), 0 1px 0 rgba(255,255,255,0.18) inset",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          <Zap size={16} strokeWidth={2.4} />
+          {generating ? "Wird generiert…" : "Angebot generieren"}
+        </button>
+      )}
     </div>
   );
 }

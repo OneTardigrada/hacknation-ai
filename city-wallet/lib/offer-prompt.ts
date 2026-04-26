@@ -64,6 +64,15 @@ export function buildOfferPrompt(
 ): ChatMessage[] {
   const tone = determineTone(intent);
   const toneInstruction = tone === "emotional" ? EMOTIONAL_INSTRUCTION : FACTUAL_INSTRUCTION;
+  // Weather-aware context: when sunny + Gastgarten, the headline must lean into it.
+  const w = intent.weatherCache?.condition?.toLowerCase?.() ?? "";
+  const isSunny = w.includes("clear") || w.includes("sun");
+  const weatherContext = isSunny && merchant.hasGuestGarden
+    ? `WETTER-NUDGE: Sonnig + Gastgarten verfügbar. Headline MUSS Gastgarten/Sonne aufgreifen
+   (z.B. "Genieße die Sonne in unserem Gastgarten…", "Schanigarten ist offen — kalte Erfrischung wartet.").`
+    : isSunny && (merchant.weatherAffinity ?? []).includes("sunny")
+    ? `WETTER-NUDGE: Sonnig + sonnen-affines Sortiment (Eis/Kaltgetränke). Headline soll Erfrischung betonen.`
+    : "";
 
   return [
     {
@@ -84,6 +93,8 @@ Name: ${merchant.name}
 Kategorie: ${merchant.category}
 Distanz-Bucket: ${intent.merchantProximityBucket}
 Emoji: ${merchant.emoji}
+Gastgarten: ${merchant.hasGuestGarden ? "ja" : "nein"}
+Wetter-Affinität: ${(merchant.weatherAffinity ?? []).join(", ") || "—"}
 
 HÄNDLER-REGELN:
 Max Rabatt: ${rules.maxDiscount}%
@@ -93,6 +104,7 @@ Produkt-Fokus: ${rules.productFocus}
 
 TON-INSTRUKTION:
 ${toneInstruction}
+${weatherContext}
 
 GENERIERE JSON (nur dieses Objekt, kein Markdown):
 {
@@ -124,18 +136,39 @@ Regeln:
 
 export function fallbackOffer(merchant: MerchantConfig, intent: IntentVector): GeneratedOfferUI {
   const tone = determineTone(intent);
+  const w = intent.weatherCache?.condition?.toLowerCase?.() ?? "";
+  const isSunny = w.includes("clear") || w.includes("sun");
+  const gastgarten = isSunny && merchant.hasGuestGarden;
+
+  const headline = gastgarten
+    ? `Genieße die Sonne im Gastgarten`
+    : tone === "emotional"
+    ? `${merchant.emoji} Gönne dir eine Pause`
+    : `${merchant.name} · 80m · 15% OFF`;
+  const subline = gastgarten
+    ? `Schanigarten ist offen — 15% auf ${merchant.productFocus}, noch 25 Min.`
+    : `15% Rabatt auf ${merchant.productFocus} — noch 25 Minuten`;
+  const discountReason = gastgarten ? "Sonne + Gastgarten" : "Ruhige Stunde";
+  const reasoning = gastgarten
+    ? "Sonniges Wetter + Schanigarten verfügbar — perfekter Moment, draußen zu sitzen."
+    : "Ruhige Stunde + Nähe = guter Moment für ein Angebot";
+
   return {
-    headline: tone === "emotional" ? `${merchant.emoji} Gönne dir eine Pause` : `${merchant.name} · 80m · 15% OFF`,
-    subline: `15% Rabatt auf ${merchant.productFocus} — noch 25 Minuten`,
+    headline,
+    subline,
     discountValue: "15% OFF",
-    discountReason: "Ruhige Stunde",
+    discountReason,
     cta: "Jetzt holen",
-    colorScheme: merchant.category === "smoothie" ? "fresh_green" : "warm_amber",
+    colorScheme: gastgarten
+      ? "warm_amber"
+      : merchant.category === "smoothie"
+      ? "fresh_green"
+      : "warm_amber",
     emoji: merchant.emoji,
     visualStyle: merchant.category === "smoothie" ? "energetic" : "cozy",
     expiryMinutes: 25,
     tone,
-    reasoning: "Ruhige Stunde + Nähe = guter Moment für ein Angebot",
+    reasoning,
     accessibilityLabel: `15% Rabatt bei ${merchant.name}, 80 Meter entfernt, gültig noch 25 Minuten`,
     merchantName: merchant.name,
     merchantId: merchant.id,

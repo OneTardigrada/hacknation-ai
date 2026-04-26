@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { Radio, Activity, Sun, Cloud, CloudRain, CloudSnow, MapPin, Clock, Store, User, Users, Minus, Plus } from "lucide-react";
+import { Radio, Activity, Sun, Cloud, CloudRain, CloudSnow, MapPin, Clock, Store, User, Users, Minus, Plus, Check } from "lucide-react";
 import { ContextPanel } from "@/components/city/ContextPanel";
 import { PrivacyLayer } from "@/components/city/PrivacyLayer";
 import { MapboardView } from "@/components/city/MapboardView";
@@ -21,7 +21,7 @@ import { useMerchantFeed } from "@/hooks/useMerchantFeed";
 import { processSignalsLocally } from "@/lib/slm-layer";
 import { getPersona, PERSONAS } from "@/lib/personas";
 import { STUTTGART_CONFIG } from "@/config/city.config";
-import { annotateMerchants } from "@/lib/geofence";
+import { annotateMerchants, prioritizeForWeather } from "@/lib/geofence";
 import type { DemoScenario } from "@/lib/scenarios";
 import type { MerchantRules } from "@/lib/offer-prompt";
 import type { PreOrder } from "@/lib/preorder";
@@ -103,9 +103,14 @@ export default function Home() {
   const txLabel = rawTxLabel.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "").trim() || "Normal";
 
   // ─── GeoFence: single source of truth ───
+  // Distance-sorted, then re-ranked by weather affinity (Gastgarten boost on sunny days).
   const annotatedMerchants = useMemo(
-    () => annotateMerchants(STUTTGART_CONFIG.merchants, userLat, userLon, radiusMeters),
-    [userLat, userLon, radiusMeters]
+    () =>
+      prioritizeForWeather(
+        annotateMerchants(STUTTGART_CONFIG.merchants, userLat, userLon, radiusMeters),
+        weatherOverride
+      ),
+    [userLat, userLon, radiusMeters, weatherOverride]
   );
   const inRadiusMerchants = useMemo(
     () => annotatedMerchants.filter((m) => m.inRadius),
@@ -158,9 +163,16 @@ export default function Home() {
     }
   }, [accept, recordAccept, merchantId]);
 
+  const [shareToast, setShareToast] = useState<{ id: number; visible: boolean } | null>(null);
   const handleShareOffer = useCallback(() => {
     setSharedCount((c) => c + 1);
+    setShareToast({ id: Date.now(), visible: true });
   }, []);
+  useEffect(() => {
+    if (!shareToast?.visible) return;
+    const t = setTimeout(() => setShareToast((s) => (s ? { ...s, visible: false } : s)), 2400);
+    return () => clearTimeout(t);
+  }, [shareToast?.id, shareToast?.visible]);
 
   const handleRouteEncounter = useCallback((merchantIdHit: string) => {
     // When the avatar passes near a merchant, switch to it so an offer can fire.
@@ -251,8 +263,97 @@ export default function Home() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden" style={{ background: "#F8F9FA" }}>
+      {/* ─────────── FIXED TOP HEADER — Live Kontext Controls ─────────── */}
+      <div className="fixed top-0 left-0 right-0 z-50 pointer-events-auto">
+        <div 
+          className="mx-4 mt-4 rounded-2xl px-8 py-5 flex items-center justify-between"
+          style={{
+            background: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            border: "1px solid rgba(15,20,30,0.08)",
+            boxShadow: "0 8px 32px rgba(15,20,30,0.12), 0 1px 0 rgba(255,255,255,0.9) inset",
+          }}
+        >
+          {/* Weather & Context */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              {renderWeatherIcon(weatherOverride.condition, 16)}
+              <span className="text-[11px] font-bold text-gray-700">
+                {weatherOverride.temp}°C
+              </span>
+            </div>
+            <div className="w-px h-4 bg-gray-200" />
+            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+              {txLabel}
+            </span>
+          </div>
+
+          {/* Central Controls */}
+          <div className="flex items-center gap-4">
+            {/* Time Machine */}
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="text-gray-600" />
+              <input
+                type="range"
+                min={0}
+                max={23}
+                value={hour}
+                onChange={(e) => setHour(parseInt(e.target.value))}
+                className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+              />
+              <span className="text-[11px] font-bold text-gray-700 min-w-[24px]">{hour}h</span>
+            </div>
+
+            {/* Radius Slider */}
+            <div className="flex items-center gap-2">
+              <Radio size={14} className="text-gray-600" />
+              <input
+                type="range"
+                min={150}
+                max={2000}
+                step={50}
+                value={radiusMeters}
+                onChange={(e) => setRadiusMeters(parseInt(e.target.value))}
+                className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+              />
+              <span className="text-[10px] font-bold text-gray-600 min-w-[32px]">{radiusMeters}m</span>
+            </div>
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
+            {/* Friends Toggle */}
+            <button
+              onClick={() => setShowFriends(!showFriends)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg transition-colors"
+              style={{
+                background: showFriends ? "rgba(230,0,0,0.08)" : "transparent",
+                color: showFriends ? "#E60000" : "#6B7280",
+              }}
+            >
+              <Users size={13} strokeWidth={2} />
+              <span className="text-[10px] font-bold">{friends.length}</span>
+            </button>
+            
+            {/* Trigger Score */}
+            <div 
+              className="px-2 py-0.5 rounded-lg"
+              style={{
+                background: ctx.triggerScore >= 0.7 ? "rgba(230,0,0,0.1)" : "rgba(156,163,175,0.1)",
+                color: ctx.triggerScore >= 0.7 ? "#E60000" : "#6B7280",
+              }}
+            >
+              <span className="text-[10px] font-bold">
+                {Math.round(ctx.triggerScore * 100)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ─────────── Fullscreen map background ─────────── */}
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-0" style={{ paddingTop: 80 }}>
         <MapboardView
           userLat={userLat}
           userLon={userLon}
@@ -261,7 +362,7 @@ export default function Home() {
           weather={weatherOverride}
           onWeatherChange={setWeatherOverride}
           inZone={ctx.location.inZone}
-          activeMerchantId={ctx.location.zoneMerchantId ?? null}
+          activeMerchantId={merchantId}
           triggerScore={ctx.triggerScore}
           hour={hour}
           radiusMeters={radiusMeters}
@@ -331,8 +432,8 @@ export default function Home() {
             style={{
               width: 480,
               height: 720, // phone outer = 340×724 → tablet height ≤ phone
-              border: "12px solid #1A1C20",
-              background: "#1A1C20",
+              border: "12px solid #1E2540",
+              background: "#1E2540",
               boxShadow:
                 "0 24px 60px rgba(15,20,30,0.22), 0 1px 0 rgba(255,255,255,0.06) inset",
             }}
@@ -354,13 +455,10 @@ export default function Home() {
               className="rounded-[1.5rem] overflow-y-auto bg-white h-full flex flex-col"
               style={{ scrollbarWidth: "thin" }}
             >
-              {/* Tab bar (Händler · Nearby · Friends · PreOrder · Demo) */}
+              {/* Tab bar (Händler · Demo) */}
               <div className="flex border-b shrink-0" style={{ borderColor: "rgba(15,20,30,0.06)" }}>
                 {[
                   { id: "merchant", label: "Händler" },
-                  { id: "nearby", label: "Nearby" },
-                  { id: "friends", label: "Friends" },
-                  { id: "preorder", label: "PreOrder" },
                   { id: "demo", label: "Demo" },
                 ].map((tab) => (
                   <button
@@ -394,6 +492,8 @@ export default function Home() {
                     onRulesChange={setRules}
                     preOrders={preOrders}
                     offerFiredAt={offerFiredAt}
+                    onGenerateOffer={handleGenerate}
+                    generating={isStreaming}
                   />
                 )}
                 {rightTab === "nearby" && (
@@ -408,9 +508,7 @@ export default function Home() {
                 {rightTab === "friends" && (
                   <FriendsLayer merchantName={merchant.name} onGroupOfferReady={handleGroupOffer} />
                 )}
-                {rightTab === "preorder" && (
-                  <PreOrderFlow merchantId={merchantId} merchantName={merchant.name} onOrderCreated={handlePreOrder} />
-                )}
+                {/* PreOrder tab removed — now lives inside the phone offer detail */}
 
                 {/* Demo tab — legacy controls (Radius, Scenarios, GPS, Seasonal, Context/DSGVO, WalletID) */}
                 {rightTab === "demo" && (
@@ -516,38 +614,15 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Tab: Context / Privacy */}
+                {/* Context Layer (DSGVO card removed per spec) */}
                 <div className="rounded-2xl overflow-hidden" style={subPanel}>
-                  <div className="flex border-b" style={{ borderColor: "rgba(15,20,30,0.06)" }}>
-                    {[
-                      { id: "context", label: "Context Layer" },
-                      { id: "privacy", label: "DSGVO" },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setLeftTab(tab.id as "context" | "privacy")}
-                        className="flex-1 py-2.5 text-xs font-semibold transition-colors"
-                        style={{
-                          background: leftTab === tab.id ? "rgba(230,0,0,0.06)" : "transparent",
-                          color: leftTab === tab.id ? "#E60000" : "#6B7280",
-                          borderBottom: leftTab === tab.id ? "2px solid #E60000" : "2px solid transparent",
-                        }}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
                   <div className="p-3">
-                    {leftTab === "context" ? (
-                      <ContextPanel
-                        ctx={ctx}
-                        merchants={STUTTGART_CONFIG.merchants}
-                        onGenerate={handleGenerate}
-                        generating={isStreaming}
-                      />
-                    ) : (
-                      <PrivacyLayer />
-                    )}
+                    <ContextPanel
+                      ctx={ctx}
+                      merchants={STUTTGART_CONFIG.merchants}
+                      onGenerate={handleGenerate}
+                      generating={isStreaming}
+                    />
                   </div>
                 </div>
 
@@ -560,72 +635,51 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ─────────── BOTTOM-LEFT "Live Kontext & Control" panel ───────────
-          Visual format ported 1:1 from MapboardView's StatBubble (rounded-3xl,
-          glass, weather presets, score badge). Now also hosts the controls
-          previously in the top header: Time Machine, Shop dropdown, User /
-          Trigger (persona) dropdown. Logic & state remain unchanged. */}
-      <div className="fixed bottom-6 left-6 z-50 pointer-events-auto">
-        <div
-          className="rounded-3xl px-6 py-5"
-          style={{
-            width: 380,
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(20px) saturate(180%)",
-            WebkitBackdropFilter: "blur(20px) saturate(180%)",
-            border: "1px solid rgba(15,20,30,0.06)",
-            boxShadow:
-              "0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 50px rgba(15,20,30,0.12), 0 4px 16px rgba(15,20,30,0.06)",
-            color: "#111827",
-          }}
-        >
-          {/* Header row: Live Kontext label + Score + LIVE */}
-          <div className="flex items-center justify-between mb-3.5">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-7 h-7 rounded-xl flex items-center justify-center text-white font-black text-[10px]"
-                style={{
-                  background: "linear-gradient(135deg,#FF1F1F 0%,#C40000 100%)",
-                  boxShadow: "0 4px 10px rgba(255,0,0,0.30)",
-                }}
-              >
-                CP
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Activity size={11} strokeWidth={2.2} style={{ color: "#E60000" }} />
-                <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">
-                  Live Kontext
-                </span>
+      {/* ─────────── TOP HEADER — full-width "Live Kontext" control bar ───────────
+          Replaces the bottom-left floating panel. Glass surface, fixed across
+          the full viewport width, hosts every control horizontally so the map
+          stays unobstructed below. */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-auto"
+        style={{
+          background: "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderBottom: "1px solid rgba(15,20,30,0.06)",
+          boxShadow: "0 6px 20px rgba(15,20,30,0.06), 0 1px 0 rgba(255,255,255,0.9) inset",
+          color: "#111827",
+        }}
+      >
+        <div className="flex items-center gap-3 px-4 py-2.5 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
+          {/* Brand + Live Kontext label */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center">
+                <span className="text-base font-black" style={{ color: "#212529", letterSpacing: "-0.02em" }}>Mylo</span>
+                <div className="ml-1" style={{ transform: "translateY(-1px)" }}>
+                  <svg width="14" height="18" viewBox="0 0 12 16" fill="none">
+                    <path d="M6 0C4.4087 0 2.88258 0.632141 1.75736 1.75736C0.632141 2.88258 0 4.4087 0 6C0 8.25 2.25 11.1 6 16C9.75 11.1 12 8.25 12 6C12 4.4087 11.3679 2.88258 10.2426 1.75736C9.11742 0.632141 7.5913 0 6 0ZM6 2C6.79565 2 7.55871 2.31607 8.12132 2.87868C8.68393 3.44129 9 4.20435 9 5C9 5.55228 8.55228 6 8 6C7.44772 6 7 5.55228 7 5C7 4.73478 6.89464 4.48043 6.70711 4.29289C6.51957 4.10536 6.26522 4 6 4C5.73478 4 5.48043 4.10536 5.29289 4.29289C5.10536 4.48043 5 4.73478 5 5C5 5.55228 4.55228 6 4 6C3.44772 6 3 5.55228 3 5C3 4.20435 3.31607 3.44129 3.87868 2.87868C4.44129 2.31607 5.20435 2 6 2Z" fill="#E60000"/>
+                  </svg>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <span
-                className="text-[9px] px-2 py-0.5 rounded-full font-bold"
-                style={{
-                  background: `${scoreColor}14`,
-                  color: scoreColor,
-                  border: `1px solid ${scoreColor}33`,
-                }}
-              >
-                Score {Math.round(ctx.triggerScore * 100)}%
-              </span>
-              <span
-                className="text-[9px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5"
-                style={{ background: "rgba(230,0,0,0.08)", color: "#E60000", border: "1px solid rgba(230,0,0,0.2)" }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                LIVE
+              <Activity size={11} strokeWidth={2.2} style={{ color: "#E60000" }} />
+              <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 whitespace-nowrap">
+                Live Kontext
               </span>
             </div>
           </div>
 
-          {/* Weather presets */}
-          <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="w-px h-7 bg-gray-200 shrink-0" />
+
+          {/* Weather presets — compact icon row */}
+          <div className="flex items-center gap-1 shrink-0">
             {WEATHER_PRESETS.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setWeatherOverride(p.data)}
-                className="flex flex-col items-center gap-0.5 py-2 rounded-xl transition-all"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all"
                 style={{
                   background: activeWeatherId === p.id ? "rgba(230,0,0,0.08)" : "rgba(15,20,30,0.025)",
                   border: activeWeatherId === p.id ? "1px solid rgba(230,0,0,0.45)" : "1px solid rgba(15,20,30,0.05)",
@@ -633,30 +687,42 @@ export default function Home() {
                 }}
                 title={p.label}
               >
-                {renderWeatherIcon(p.data.condition, 15)}
-                <span className="text-[9px] font-bold">{p.data.temp}°</span>
+                {renderWeatherIcon(p.data.condition, 13)}
+                <span className="text-[9px] font-bold tabular-nums">{p.data.temp}°</span>
               </button>
             ))}
           </div>
 
-          {/* GPS row */}
-          <div className="flex items-center justify-between gap-3 text-[10px] pb-3 border-b border-gray-100">
-            <span className="font-mono text-gray-500 flex items-center gap-1 truncate">
-              <MapPin size={10} strokeWidth={1.75} />
-              {userLat.toFixed(4)}, {userLon.toFixed(4)}
+          <div className="w-px h-7 bg-gray-200 shrink-0" />
+
+          {/* Time Machine — inline */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Clock size={11} strokeWidth={2.2} className="text-gray-500" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 whitespace-nowrap">
+              Time
             </span>
-            {ctx.location.inZone && (
-              <span className="text-[9px] font-bold flex items-center gap-1.5" style={{ color: "#B91C1C" }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                In Zone
-              </span>
-            )}
+            <input
+              type="range"
+              min={6}
+              max={22}
+              value={hour}
+              onChange={(e) => setHour(parseInt(e.target.value, 10))}
+              className="h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+              style={{ width: 96 }}
+            />
+            <span className="text-[10px] font-bold font-mono w-10 text-right tabular-nums" style={{ color: "#E60000" }}>
+              {String(hour).padStart(2, "0")}:00
+            </span>
           </div>
 
-          {/* Radius slider */}
-          <div className="flex items-center gap-3 py-3 border-b border-gray-100">
-            <Radio size={12} strokeWidth={2} className="text-gray-500 shrink-0" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 whitespace-nowrap">Radius</span>
+          <div className="w-px h-7 bg-gray-200 shrink-0" />
+
+          {/* Radius slider — inline */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Radio size={11} strokeWidth={2.2} className="text-gray-500" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 whitespace-nowrap">
+              Radius
+            </span>
             <input
               type="range"
               min={50}
@@ -664,60 +730,54 @@ export default function Home() {
               step={10}
               value={radiusMeters}
               onChange={(e) => setRadiusMeters(parseInt(e.target.value, 10))}
-              className="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+              className="h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+              style={{ width: 96 }}
             />
-            <span className="text-[10px] font-bold font-mono w-12 text-right" style={{ color: "#E60000" }}>
+            <span className="text-[10px] font-bold font-mono w-12 text-right tabular-nums" style={{ color: "#E60000" }}>
               {radiusMeters}m
             </span>
           </div>
 
-          {/* Time Machine */}
-          <div className="py-3 border-b border-gray-100">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Clock size={11} strokeWidth={2.2} className="text-gray-500" />
-              <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500">Time Machine</span>
-            </div>
-            <TimeMachine hour={hour} onChange={setHour} />
-          </div>
+          <div className="w-px h-7 bg-gray-200 shrink-0" />
 
-          {/* Shop + Persona dropdowns */}
-          <div className="grid grid-cols-2 gap-3 py-3 border-b border-gray-100">
-            <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 flex items-center gap-1">
-                <Store size={10} strokeWidth={2.2} /> Shop
-              </span>
-              <select
-                value={merchantId}
-                onChange={(e) => setMerchantId(e.target.value)}
-                className="text-[10px] px-2 py-1.5 rounded-lg border focus:outline-none"
-                style={{ background: "#FFFFFF", borderColor: "rgba(15,20,30,0.08)", color: "#374151" }}
-              >
-                {annotatedMerchants.map((m) => (
-                  <option key={m.id} value={m.id} disabled={!m.inRadius}>
-                    {m.name} · {Math.round(m.distanceMeters)} m{m.inRadius ? "" : " (außerhalb)"}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 flex items-center gap-1">
-                <User size={10} strokeWidth={2.2} /> Trigger
-              </span>
-              <select
-                value={personaId}
-                onChange={(e) => { setPersonaId(e.target.value); updatePersona(e.target.value); }}
-                className="text-[10px] px-2 py-1.5 rounded-lg border focus:outline-none"
-                style={{ background: "#FFFFFF", borderColor: "rgba(15,20,30,0.08)", color: "#374151" }}
-              >
-                {PERSONAS.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </label>
-          </div>
+          {/* Shop dropdown */}
+          <label className="flex items-center gap-1.5 shrink-0">
+            <Store size={11} strokeWidth={2.2} className="text-gray-500" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 whitespace-nowrap">Shop</span>
+            <select
+              value={merchantId}
+              onChange={(e) => setMerchantId(e.target.value)}
+              className="text-[10px] px-2 py-1.5 rounded-lg border focus:outline-none max-w-[180px]"
+              style={{ background: "#FFFFFF", borderColor: "rgba(15,20,30,0.08)", color: "#374151" }}
+            >
+              {annotatedMerchants.map((m) => (
+                <option key={m.id} value={m.id} disabled={!m.inRadius}>
+                  {m.name} · {Math.round(m.distanceMeters)}m{m.inRadius ? "" : " (außerh.)"}
+                </option>
+              ))}
+            </select>
+          </label>
 
-          {/* Friends — flat S-CI row: label left, ─ count + buttons right */}
-          <div className="flex items-center justify-between py-3">
+          {/* Trigger / persona dropdown */}
+          <label className="flex items-center gap-1.5 shrink-0">
+            <User size={11} strokeWidth={2.2} className="text-gray-500" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-gray-500 whitespace-nowrap">Trigger</span>
+            <select
+              value={personaId}
+              onChange={(e) => { setPersonaId(e.target.value); updatePersona(e.target.value); }}
+              className="text-[10px] px-2 py-1.5 rounded-lg border focus:outline-none"
+              style={{ background: "#FFFFFF", borderColor: "rgba(15,20,30,0.08)", color: "#374151" }}
+            >
+              {PERSONAS.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="w-px h-7 bg-gray-200 shrink-0" />
+
+          {/* Friends — compact */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setShowFriends((s) => !s)}
               className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.14em] transition-colors"
@@ -727,46 +787,101 @@ export default function Home() {
               <Users size={11} strokeWidth={2.2} />
               Friends
             </button>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => { if (friends.length > 0) removeFriend(friends[friends.length - 1].id); }}
-                disabled={friends.length === 0}
-                className="w-7 h-7 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Letzten Freund entfernen"
-              >
-                <Minus size={12} strokeWidth={2.2} />
-              </button>
-              <span className="text-[10px] font-mono font-bold text-gray-700 w-10 text-center tabular-nums">
-                {friends.length} / {FRIEND_PALETTE.length}
-              </span>
-              <button
-                onClick={addFriend}
-                disabled={friends.length >= FRIEND_PALETTE.length}
-                className="w-7 h-7 rounded-lg border flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                style={{
-                  background: friends.length >= FRIEND_PALETTE.length ? "#9CA3AF" : "#E60000",
-                  borderColor: friends.length >= FRIEND_PALETTE.length ? "#9CA3AF" : "#C40000",
-                  boxShadow: friends.length >= FRIEND_PALETTE.length ? "none" : "0 2px 6px rgba(230,0,0,0.25)",
-                }}
-                title="Freund hinzufügen"
-              >
-                <Plus size={12} strokeWidth={2.4} />
-              </button>
-            </div>
+            <button
+              onClick={() => { if (friends.length > 0) removeFriend(friends[friends.length - 1].id); }}
+              disabled={friends.length === 0}
+              className="w-6 h-6 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              title="Letzten Freund entfernen"
+            >
+              <Minus size={11} strokeWidth={2.2} />
+            </button>
+            <span className="text-[10px] font-mono font-bold text-gray-700 w-8 text-center tabular-nums">
+              {friends.length}/{FRIEND_PALETTE.length}
+            </span>
+            <button
+              onClick={addFriend}
+              disabled={friends.length >= FRIEND_PALETTE.length}
+              className="w-6 h-6 rounded-lg border flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              style={{
+                background: friends.length >= FRIEND_PALETTE.length ? "#9CA3AF" : "#E60000",
+                borderColor: friends.length >= FRIEND_PALETTE.length ? "#9CA3AF" : "#C40000",
+                boxShadow: friends.length >= FRIEND_PALETTE.length ? "none" : "0 2px 6px rgba(230,0,0,0.25)",
+              }}
+              title="Freund hinzufügen"
+            >
+              <Plus size={11} strokeWidth={2.4} />
+            </button>
           </div>
 
-          {/* In-Zone footer — centered, compact */}
-          {ctx.location.inZone && (
-            <div
-              className="flex items-center justify-center gap-1.5 text-[10px] font-bold pt-3 border-t border-gray-100"
-              style={{ color: "#B91C1C" }}
+          {/* Push score + LIVE + In-Zone to the far right */}
+          <div className="flex items-center gap-1.5 ml-auto shrink-0">
+            <span
+              className="font-mono text-[10px] text-gray-500 hidden md:inline-flex items-center gap-1"
+              title="GPS"
+            >
+              <MapPin size={10} strokeWidth={1.75} />
+              {userLat.toFixed(4)}, {userLon.toFixed(4)}
+            </span>
+            {ctx.location.inZone && (
+              <span
+                className="text-[9px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5"
+                style={{ background: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA" }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                In Zone · {merchant.name}
+              </span>
+            )}
+            <span
+              className="text-[9px] px-2 py-0.5 rounded-full font-bold"
+              style={{
+                background: `${scoreColor}14`,
+                color: scoreColor,
+                border: `1px solid ${scoreColor}33`,
+              }}
+            >
+              Score {Math.round(ctx.triggerScore * 100)}%
+            </span>
+            <span
+              className="text-[9px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5"
+              style={{ background: "rgba(230,0,0,0.08)", color: "#E60000", border: "1px solid rgba(230,0,0,0.2)" }}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-              In Zone · {merchant.name}
-            </div>
-          )}
+              LIVE
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Share confirmation toast — sits above device cluster, under no other UI */}
+      {shareToast && (
+        <div
+          className="fixed left-1/2 z-[90] pointer-events-none"
+          style={{
+            bottom: 32,
+            transform: `translate(-50%, ${shareToast.visible ? 0 : 16}px)`,
+            opacity: shareToast.visible ? 1 : 0,
+            transition: "opacity 280ms ease, transform 280ms cubic-bezier(.2,.7,.2,1)",
+          }}
+        >
+          <div
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-white text-[12px] font-bold"
+            style={{
+              background: "linear-gradient(135deg,#FF1F1F 0%,#C40000 100%)",
+              boxShadow: "0 14px 32px rgba(230,0,0,0.32), 0 1px 0 rgba(255,255,255,0.25) inset",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            <Check size={14} strokeWidth={2.6} />
+            Angebot geteilt!
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: "rgba(255,255,255,0.22)" }}
+            >
+              Local Hero +1
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,18 +1,8 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { MapPin, ChevronRight, X, Coffee, Croissant, Sparkles, Tag } from "lucide-react";
 import type { MerchantWithDistance } from "@/lib/geofence";
-
-/** Image with graceful fallback to a soft red gradient when load fails. */
-function SafeImage({ src, alt, sizes }: { src: string; alt: string; sizes: string }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) {
-    return <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#FEE2E2,#FECACA)" }} />;
-  }
-  return <Image src={src} alt={alt} fill sizes={sizes} className="object-cover" unoptimized onError={() => setFailed(true)} />;
-}
 
 interface NearbyShopsProps {
   merchants: MerchantWithDistance[];
@@ -79,16 +69,15 @@ export function NearbyShops({
                   : "0 4px 14px rgba(15,20,30,0.06), 0 1px 0 rgba(255,255,255,0.9) inset",
               }}
             >
-              {/* Hero image */}
+              {/* Hero (SVG-only — no images) */}
               <div className="relative w-full" style={{ height: 96 }}>
-                {m.heroImage ? (
-                  <SafeImage src={m.heroImage} alt={m.name} sizes="320px" />
-                ) : (
-                  <div
-                    className="absolute inset-0"
-                    style={{ background: "linear-gradient(135deg,#FEE2E2,#FECACA)" }}
-                  />
-                )}
+                <div
+                  className="absolute inset-0"
+                  style={{ background: "linear-gradient(135deg,#FEE2E2,#FECACA)" }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CatIcon size={28} strokeWidth={1.75} />
+                </div>
                 <div
                   className="absolute inset-0"
                   style={{
@@ -169,13 +158,15 @@ export function NearbyShops({
                   "0 30px 80px rgba(15,20,30,0.35), 0 1px 0 rgba(255,255,255,0.9) inset",
               }}
             >
-              {/* Hero */}
+              {/* Hero (SVG-only — no images) */}
               <div className="relative w-full" style={{ height: 220 }}>
-                {opened.heroImage ? (
-                  <SafeImage src={opened.heroImage} alt={opened.name} sizes="500px" />
-                ) : (
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#FEE2E2,#FECACA)" }} />
-                )}
+                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#FEE2E2,#FECACA)" }} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {(() => {
+                    const OpenedIcon = CATEGORY_ICON[opened.category] ?? Tag;
+                    return <OpenedIcon size={64} strokeWidth={1.5} />;
+                  })()}
+                </div>
                 <button
                   onClick={() => setOpenId(null)}
                   className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center"

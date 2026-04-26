@@ -1,12 +1,19 @@
 "use client";
-import Image from "next/image";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Check, X, MapPin, Clock } from "lucide-react";
+import { Check, X, MapPin, Clock, Coffee, Croissant, ShoppingBag, UtensilsCrossed, Sparkles, Tag } from "lucide-react";
 import type { GeneratedOfferUI } from "@/lib/offer-prompt";
 import { STUTTGART_CONFIG } from "@/config/city.config";
 import { ContextBadges } from "./ContextBadges";
 import { CountdownTimer } from "./CountdownTimer";
+
+const CATEGORY_ICON: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>> = {
+  cafe: Coffee,
+  bakery: Croissant,
+  smoothie: Sparkles,
+  restaurant: UtensilsCrossed,
+  retail: ShoppingBag,
+};
 
 interface OfferCardProps {
   offer: GeneratedOfferUI;
@@ -16,6 +23,7 @@ interface OfferCardProps {
   onDismiss: () => void;
   onExpire: () => void;
   seasonalTag?: string | null;
+  currentHour?: number;
 }
 
 const COLOR_SCHEMES: Record<string, string> = {
@@ -46,13 +54,12 @@ function DiscountCounter({ target }: { target: number }) {
   return <span>{val}%</span>;
 }
 
-export function OfferCard({ offer, weather, txLabel, onAccept, onDismiss, onExpire, seasonalTag }: OfferCardProps) {
+export function OfferCard({ offer, weather, txLabel, onAccept, onDismiss, onExpire, seasonalTag, currentHour = 11 }: OfferCardProps) {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
   const acceptOpacity = useTransform(x, [0, 100], [0, 1]);
   const dismissOpacity = useTransform(x, [-100, 0], [1, 0]);
   const [hintShown, setHintShown] = useState(false);
-  const [heroFailed, setHeroFailed] = useState(false);
 
   const isHalloween = seasonalTag === "halloween";
   const isChristmas = seasonalTag === "christmas";
@@ -80,13 +87,13 @@ export function OfferCard({ offer, weather, txLabel, onAccept, onDismiss, onExpi
   const now = new Date();
   const timeLabel = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-  // Resolve hero image from city config by merchant name
+  // Resolve merchant config (no hero image — SVG-only design)
   const merchantCfg = STUTTGART_CONFIG.merchants.find(
     (m) => m.name === offer.merchantName
   );
-  const heroImage = merchantCfg?.heroImage;
-  const showHero = !!heroImage && !heroFailed;
+  const showHero = false;
   const tagline = merchantCfg?.tagline;
+  const CategoryIcon = CATEGORY_ICON[merchantCfg?.category ?? ""] ?? Tag;
   const distanceLabel =
     offer.distanceMeters != null ? `${Math.round(offer.distanceMeters)} m entfernt` : null;
 
@@ -116,18 +123,9 @@ export function OfferCard({ offer, weather, txLabel, onAccept, onDismiss, onExpi
         <X size={36} className="text-red-400" strokeWidth={3} />
       </motion.div>
 
-      {/* Hero image header (iOS-style) */}
-      {showHero && !isHalloween && !isChristmas && (
+      {/* Hero image header — disabled (SVG-only design) */}
+      {false && (
         <div className="relative w-full" style={{ height: 160 }}>
-          <Image
-            src={heroImage as string}
-            alt={offer.merchantName}
-            fill
-            sizes="360px"
-            className="object-cover"
-            unoptimized
-            onError={() => setHeroFailed(true)}
-          />
           <div
             className="absolute inset-0"
             style={{
@@ -185,14 +183,24 @@ export function OfferCard({ offer, weather, txLabel, onAccept, onDismiss, onExpi
           time={timeLabel}
         />
 
-        {/* Z:2 — Emoji visual (only when no hero image) */}
-        {(!showHero || isHalloween || isChristmas) && (
-          <div className="flex items-center justify-center py-2">
-            <span className="text-6xl" role="img" aria-label={offer.emoji}>
-              {offer.emoji}
-            </span>
+        {/* Z:2 — Category SVG icon (no emoji, no images) */}
+        <div className="flex items-center justify-center py-2">
+          <div
+            className="flex items-center justify-center rounded-full"
+            style={{
+              width: 88,
+              height: 88,
+              background: isHalloween || isChristmas
+                ? "rgba(255,255,255,0.08)"
+                : "linear-gradient(135deg, rgba(230,0,0,0.10), rgba(196,0,0,0.04))",
+              boxShadow: isHalloween || isChristmas
+                ? "inset 0 0 0 1px rgba(255,255,255,0.10)"
+                : "inset 0 0 0 1px rgba(230,0,0,0.12)",
+            }}
+          >
+            <CategoryIcon size={44} strokeWidth={1.75} color="#E60000" />
           </div>
-        )}
+        </div>
 
         {/* Z:3 — Headline */}
         <div>
@@ -221,7 +229,13 @@ export function OfferCard({ offer, weather, txLabel, onAccept, onDismiss, onExpi
               {offer.merchantName}
             </p>
           </div>
-          <CountdownTimer minutes={offer.expiryMinutes} onExpire={onExpire} />
+          {/* FOMO Timer - Gilt noch bis [time] Uhr */}
+          <div className="flex items-center gap-1.5">
+            <Clock size={12} className="text-red-600" strokeWidth={2} />
+            <span className="text-[11px] font-bold" style={{ color: "#E60000" }}>
+              Gilt noch bis {(currentHour + 2) % 24}:00 Uhr
+            </span>
+          </div>
         </div>
 
         {/* Z:5 — CTA */}

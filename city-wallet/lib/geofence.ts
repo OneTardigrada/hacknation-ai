@@ -34,6 +34,41 @@ export function filterInRadius(
   );
 }
 
+/**
+ * Re-rank merchants based on weather fit:
+ *  - Sunny: Gastgarten merchants and "sunny" affinity bubble to the top.
+ *  - Cold/Rain: warm-drink/cold/rain affinity wins.
+ * Stable secondary sort by distance (preserves the original order otherwise).
+ */
+export function prioritizeForWeather<T extends MerchantConfig & { distanceMeters?: number }>(
+  merchants: T[],
+  weather: { temp?: number; condition?: string }
+): T[] {
+  const c = (weather.condition ?? "").toLowerCase();
+  const isSunny = c.includes("clear") || c.includes("sun");
+  const isRain = c.includes("rain") || c.includes("drizzle");
+  const isSnow = c.includes("snow");
+  const isCold = (weather.temp ?? 99) <= 12;
+
+  const score = (m: T) => {
+    let s = 0;
+    if (isSunny) {
+      if (m.hasGuestGarden) s += 4;
+      if ((m.weatherAffinity ?? []).includes("sunny")) s += 2;
+    }
+    if (isRain && (m.weatherAffinity ?? []).includes("rain")) s += 3;
+    if (isSnow && (m.weatherAffinity ?? []).includes("snow")) s += 3;
+    if (isCold && (m.weatherAffinity ?? []).includes("cold")) s += 2;
+    return s;
+  };
+
+  return [...merchants].sort((a, b) => {
+    const diff = score(b) - score(a);
+    if (diff !== 0) return diff;
+    return (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0);
+  });
+}
+
 export interface GeofenceZone {
   merchantId: string;
   merchantName: string;

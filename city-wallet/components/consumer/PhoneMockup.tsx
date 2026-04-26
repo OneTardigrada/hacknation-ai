@@ -1,7 +1,6 @@
 ﻿"use client";
-// Full PhoneMockup — Pixel home screen → City Wallet app with 5 screens
+// Full PhoneMockup — Pixel home screen → Mylo app with 5 screens
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Map, { Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -13,7 +12,7 @@ import {
   MessageCircle, Settings, Shield, TrendingUp,
   Smartphone, Euro, Star, Save, Clock, BadgePercent, Phone as PhoneIcon,
   Camera, Compass, Croissant, Sparkles, UtensilsCrossed, Minus, Plus,
-  Heart, Share2, Send, Award,
+  Heart, Share2, Send, Award, ShoppingBasket,
 } from "lucide-react";
 import { OfferCard } from "./OfferCard";
 import { CashbackRedemption } from "./CashbackRedemption";
@@ -48,7 +47,7 @@ const PHONE_APPS = [
   { name: "Nachrichten", color: "#34A853", Icon: MessageCircle },
   { name: "Kamera", color: "#212529", Icon: Camera },
   { name: "Karten", color: "#EA4335", Icon: MapPin },
-  { name: "City Wallet", color: "#E60000", Icon: Tag, isMain: true as const },
+  { name: "Mylo", color: "#E60000", Icon: Tag, isMain: true as const },
   { name: "Einstellungen", color: "#5F6368", Icon: Settings },
 ] as const;
 
@@ -68,7 +67,7 @@ function isMerchantOpen(m: { openingHours?: { open: number; close: number } }, h
 }
 
 /** Image with graceful fallback to a soft red gradient + category icon when the remote image fails to load. */
-function ShopImage({ src, alt, sizes, fallbackIcon: FallbackIcon, rounded = "rounded-xl", grayscale = false }: {
+function ShopImage({ fallbackIcon: FallbackIcon, rounded = "rounded-xl", grayscale = false }: {
   src?: string;
   alt: string;
   sizes: string;
@@ -76,28 +75,14 @@ function ShopImage({ src, alt, sizes, fallbackIcon: FallbackIcon, rounded = "rou
   rounded?: string;
   grayscale?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
-  if (!src || failed) {
-    return (
-      <div
-        className={`absolute inset-0 ${rounded} flex items-center justify-center`}
-        style={{ background: "linear-gradient(135deg,#FEE2E2,#FECACA)", filter: grayscale ? "grayscale(85%) saturate(0.6)" : undefined }}
-      >
-        <FallbackIcon size={20} color="#E60000" strokeWidth={1.75} />
-      </div>
-    );
-  }
+  // SVG-only design — always render the icon fallback, never load shop images.
   return (
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      sizes={sizes}
-      className={`object-cover ${rounded}`}
-      style={grayscale ? { filter: "grayscale(85%) saturate(0.6)" } : undefined}
-      unoptimized
-      onError={() => setFailed(true)}
-    />
+    <div
+      className={`absolute inset-0 ${rounded} flex items-center justify-center`}
+      style={{ background: "linear-gradient(135deg,#FEE2E2,#FECACA)", filter: grayscale ? "grayscale(85%) saturate(0.6)" : undefined }}
+    >
+      <FallbackIcon size={20} color="#E60000" strokeWidth={1.75} />
+    </div>
   );
 }
 
@@ -157,15 +142,15 @@ function PhoneHomeScreen({ onOpenApp, hasOffer }: { onOpenApp: () => void; hasOf
         />
       </div>
 
-      {/* Clock — Pixel-style large light type */}
-      <div className="flex flex-col items-center pt-10 pb-6 z-10">
+      {/* Clock — Pixel-style large light type, generous top padding to clear status bar + camera */}
+      <div className="flex flex-col items-center pt-28 pb-4 z-10">
         <p className="text-[64px] font-extralight tracking-tight leading-none" style={{ color: "#212529" }}>{timeStr}</p>
         <p className="text-[11px] mt-2 capitalize tracking-wide" style={{ color: "rgba(33,37,41,0.55)" }}>{dateStr}</p>
       </div>
 
-      {/* Minimalist app grid — 2 columns × 3 rows of essentials */}
-      <div className="flex-1 px-8 z-10">
-        <div className="grid grid-cols-3 gap-x-4 gap-y-6">
+      {/* Minimalist app grid — luxurious gap from clock so icons breathe (Figma-grade) */}
+      <div className="flex-1 px-8 z-10 mt-12">
+        <div className="grid grid-cols-3 gap-x-4 gap-y-7">
           {PHONE_APPS.map((app) => {
             const isMain = "isMain" in app && app.isMain;
             return (
@@ -177,18 +162,24 @@ function PhoneHomeScreen({ onOpenApp, hasOffer }: { onOpenApp: () => void; hasOf
                   style={{
                     width: 56,
                     height: 56,
-                    background: isMain ? "#E60000" : "#FFFFFF",
+                    background: isMain ? "linear-gradient(135deg,#FF1F1F 0%,#C40000 100%)" : "#FFFFFF",
                     boxShadow: isMain
                       ? "0 10px 24px rgba(230,0,0,0.32), 0 0 0 1px rgba(230,0,0,0.08)"
                       : "0 4px 14px rgba(15,20,30,0.06), 0 0 0 1px rgba(15,20,30,0.05)",
                     cursor: isMain ? "pointer" : "default",
                   }}
                 >
-                  <app.Icon
-                    size={26}
-                    color={isMain ? "#FFFFFF" : app.color}
-                    strokeWidth={1.75}
-                  />
+                  {isMain ? (
+                    <svg width="26" height="32" viewBox="0 0 12 16" fill="none">
+                      <path d="M6 0C4.4087 0 2.88258 0.632141 1.75736 1.75736C0.632141 2.88258 0 4.4087 0 6C0 8.25 2.25 11.1 6 16C9.75 11.1 12 8.25 12 6C12 4.4087 11.3679 2.88258 10.2426 1.75736C9.11742 0.632141 7.5913 0 6 0ZM6 2C6.79565 2 7.55871 2.31607 8.12132 2.87868C8.68393 3.44129 9 4.20435 9 5C9 5.55228 8.55228 6 8 6C7.44772 6 7 5.55228 7 5C7 4.73478 6.89464 4.48043 6.70711 4.29289C6.51957 4.10536 6.26522 4 6 4C5.73478 4 5.48043 4.10536 5.29289 4.29289C5.10536 4.48043 5 4.73478 5 5C5 5.55228 4.55228 6 4 6C3.44772 6 3 5.55228 3 5C3 4.20435 3.31607 3.44129 3.87868 2.87868C4.44129 2.31607 5.20435 2 6 2Z" fill="#FFFFFF"/>
+                    </svg>
+                  ) : (
+                    <app.Icon
+                      size={26}
+                      color={app.color}
+                      strokeWidth={1.75}
+                    />
+                  )}
                   {isMain && hasOffer && (
                     <motion.div
                       animate={{ scale: [1, 1.2, 1] }}
@@ -270,7 +261,7 @@ function AppHomeScreen({ profile, weather, offer, offerState, generating, cashba
           <div className="absolute inset-0 p-4 flex flex-col justify-between">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-white/60 text-[10px] uppercase tracking-widest">Sparkasse City Wallet</p>
+                <p className="text-white/60 text-[10px] uppercase tracking-widest">Sparkasse Mylo</p>
                 <p className="text-white font-bold text-base mt-0.5">{profile.name}</p>
               </div>
               <CreditCard size={22} color="rgba(255,255,255,0.8)" />
@@ -430,6 +421,55 @@ interface AppOffersProps {
   radiusMeters?: number;
   hour?: number;
 }
+
+// Pre-Order section — placed inside the phone offer detail (was previously on the tablet).
+// Lightweight inline component: tap to confirm, shows toast confirmation.
+function PreOrderSection({ merchantName }: { merchantName: string }) {
+  const [confirmed, setConfirmed] = useState(false);
+  const handleClick = () => {
+    setConfirmed(true);
+    setTimeout(() => setConfirmed(false), 2400);
+  };
+  return (
+    <div className="mt-4 rounded-2xl" style={{ background: "#FFFFFF", border: "1px solid rgba(15,20,30,0.06)" }}>
+      <button onClick={handleClick} className="w-full flex items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(168,85,247,0.10)" }}>
+            <ShoppingBasket size={16} strokeWidth={2} color="#A855F7" />
+          </div>
+          <div className="text-left">
+            <p className="text-[12px] font-black" style={{ color: "#212529", letterSpacing: "-0.01em" }}>Pre-Order abgeben</p>
+            <p className="text-[10px] mt-0.5" style={{ color: "rgba(33,37,41,0.55)" }}>Bestelle vorab bei {merchantName} – ohne Wartezeit.</p>
+          </div>
+        </div>
+        <ChevronRight size={14} style={{ color: "rgba(33,37,41,0.45)" }} />
+      </button>
+      <AnimatePresence>
+        {confirmed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pb-5 pt-1">
+              <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl" style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.20)" }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: "#22c55e" }}>
+                  <Check size={14} className="text-white" strokeWidth={2.6} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black" style={{ color: "#15803d" }}>Pre-Order gesendet</p>
+                  <p className="text-[10px]" style={{ color: "rgba(21,128,61,0.75)" }}>Bereit zur Abholung in ~10 Min.</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function AppOffersScreen({ offer, offerState, generating, streamedText, redemptionView, weather, txLabel, isDark, seasonalTag, onAccept, onDismiss, onExpire, onSwitchToQR, onRedemptionClose, onGenerateNew, merchants = [], favoriteIds, onToggleFavorite, activeFeedOfferId, onOpenFeedOffer, onSelectMerchant, shareOpen, onShareToggle, onShareOffer, radiusMeters, hour = new Date().getHours() }: AppOffersProps) {
   const txt = isDark ? "#F9FAFB" : "#111827";
   const sub = isDark ? "rgba(255,255,255,0.5)" : "#6B7280";
@@ -546,6 +586,9 @@ function AppOffersScreen({ offer, offerState, generating, streamedText, redempti
               )}
             </AnimatePresence>
           </div>
+
+          {/* Pre-Order section — placed below share, native to phone (moved off tablet) */}
+          <PreOrderSection merchantName={activeFeedMerchant.name} />
         </div>
       </div>
     );
@@ -589,7 +632,7 @@ function AppOffersScreen({ offer, offerState, generating, streamedText, redempti
         {!generating && offer && offerState === "ready" && !redemptionView && (
           <motion.div key="offer" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] mb-2 px-1" style={{ color: "#E60000" }}>Aktiv</p>
-            <OfferCard offer={offer} weather={weather} txLabel={txLabel} onAccept={onAccept} onDismiss={onDismiss} onExpire={onExpire} seasonalTag={seasonalTag} />
+            <OfferCard offer={offer} weather={weather} txLabel={txLabel} onAccept={onAccept} onDismiss={onDismiss} onExpire={onExpire} seasonalTag={seasonalTag} currentHour={hour} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -699,7 +742,7 @@ function AppWalletScreen({ profile, cashbackBalance, isDark, transactions }: { p
           <div className="absolute inset-0 p-4 flex flex-col justify-between">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-white/55 text-[9px] uppercase tracking-widest">Sparkasse City Wallet</p>
+                <p className="text-white/55 text-[9px] uppercase tracking-widest">Sparkasse Mylo</p>
                 <p className="text-white font-bold text-sm mt-0.5">{profile.name}</p>
               </div>
               <CreditCard size={20} color="rgba(255,255,255,0.8)" />
@@ -788,7 +831,7 @@ function AppProfileScreen({ profile, draftProfile, setDraftProfile, editingProfi
         {!editingProfile && (
           <>
             <p className="text-sm font-bold" style={{ color: txt }}>{profile.name}</p>
-            <p className="text-[10px]" style={{ color: sub }}>{profile.age} Jahre · City Wallet</p>
+            <p className="text-[10px]" style={{ color: sub }}>{profile.age} Jahre · Mylo</p>
           </>
         )}
       </div>
@@ -901,7 +944,7 @@ function InAppMap({ merchants, userLat, userLon, radiusMeters, hour, activeMerch
   // zoom 16.4 — at radius ≥ 250m the ring would extend past the canvas and
   // markers would clip out of view (which is the bug the user is seeing).
   const CANVAS = 280; // px (height & width of mini-map)
-  const targetRingPx = CANVAS * 0.7; // 70% canvas → leaves margin for outer pins
+  const targetRingPx = CANVAS * 0.85; // 85% canvas → ring dominates view, mirrors big-map framing
   const targetMetersPerPx = radiusMeters / (targetRingPx / 2);
   const mPerPxAtLat = (z: number) =>
     (156543.03392 * Math.cos((userLat * Math.PI) / 180)) / Math.pow(2, z);
@@ -1047,7 +1090,7 @@ function InAppMap({ merchants, userLat, userLon, radiusMeters, hour, activeMerch
         <span className="text-[10px] font-bold" style={{ color: "#212529" }}>{radiusMeters} m</span>
       </div>
 
-      {/* CityPulse badge */}
+      {/* Mylo badge */}
       <div
         className="absolute top-3 right-3 rounded-full px-2.5 py-1 flex items-center gap-1"
         style={{ background: "rgba(230,0,0,0.95)", boxShadow: "0 4px 10px rgba(230,0,0,0.30)" }}
@@ -1263,11 +1306,11 @@ export function PhoneMockup({
   const now = new Date();
   const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-  // When offer arrives: show notification banner + auto-navigate
+  // When offer arrives: show notification banner only (no auto-navigation).
+  // The user must tap the notification to open the offer.
   useEffect(() => {
     if (offerState === "ready" && offer) {
       setShowNotification(true);
-      if (mode === "app") setScreen("offers");
     }
   }, [offerState, offer]); // eslint-disable-line
 
@@ -1328,27 +1371,28 @@ export function PhoneMockup({
 
   return (
     <div className="relative mx-auto" style={{ width: 340, height: 724 }}>
-      {/* Outer shell — Pixel-style matte aluminum */}
+      {/* Outer shell — Pixel-style dark-navy frame */}
       <div
         className="absolute inset-0 rounded-[44px]"
         style={{
-          background: "linear-gradient(145deg, #2A2D31 0%, #1A1C20 100%)",
+          background: "linear-gradient(145deg, #2A3354 0%, #1E2540 100%)",
           boxShadow:
             "0 30px 80px rgba(15,20,30,0.35), 0 0 0 1px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.05) inset",
         }}
       />
 
       {/* Side buttons — Pixel placement (right side: power on top, volume below) */}
-      <div className="absolute top-28 w-[3px] h-12 rounded-r-sm" style={{ right: -3, background: "#1A1C20" }} />
-      <div className="absolute top-44 w-[3px] h-20 rounded-r-sm" style={{ right: -3, background: "#1A1C20" }} />
+      <div className="absolute top-28 w-[3px] h-12 rounded-r-sm" style={{ right: -3, background: "#1E2540" }} />
+      <div className="absolute top-44 w-[3px] h-20 rounded-r-sm" style={{ right: -3, background: "#1E2540" }} />
 
-      {/* Screen — very thin uniform bezel */}
-      <div className="absolute inset-[3px] rounded-[42px] overflow-hidden bg-black">
+      {/* Screen — thicker uniform bezel for clean phone-frame seal. 
+          Match outer corner-radius minus bezel width so navy frame fully wraps the screen. */}
+      <div className="absolute inset-[6px] rounded-[38px] overflow-hidden bg-black">
         {/* Centered punch-hole front camera (Pixel style) */}
-        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full z-40" style={{ background: "#0A0A0C", boxShadow: "0 0 0 1px rgba(255,255,255,0.04) inset" }} />
+        <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full z-40" style={{ background: "#0A0A0C", boxShadow: "0 0 0 1px rgba(255,255,255,0.04) inset" }} />
 
-        {/* Status bar — visible above content, below punch-hole */}
-        <div className="absolute top-0 left-0 right-0 h-11 z-30 flex items-center justify-between px-6 pt-2.5">
+        {/* Status bar — generous breathing room from physical edges */}
+        <div className="absolute top-0 left-0 right-0 h-14 z-30 flex items-center justify-between px-7 pt-5">
           <span className="text-[11px] font-semibold tracking-tight" style={{ color: statusColor }}>{timeStr}</span>
           <div className="flex items-center gap-1.5">
             <Signal size={12} style={{ color: statusColor }} />
@@ -1401,7 +1445,7 @@ export function PhoneMockup({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-[10px] font-bold tracking-tight uppercase" style={{ color: "#E60000" }}>CityPulse</span>
+                  <span className="text-[10px] font-bold tracking-tight uppercase" style={{ color: "#E60000" }}>Mylo</span>
                   <span className="w-0.5 h-0.5 rounded-full" style={{ background: "rgba(33,37,41,0.35)" }} />
                   <span className="text-[10px]" style={{ color: "rgba(33,37,41,0.5)" }}>Gerade eben</span>
                 </div>

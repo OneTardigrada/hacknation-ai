@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { MENU_ITEMS, type PreOrderItem, createPreOrder } from "@/lib/preorder";
 import type { PreOrder } from "@/lib/preorder";
 
@@ -89,7 +90,9 @@ export function PreOrderFlow({ merchantId, merchantName, onOrderCreated }: PreOr
 
       {step === "done" && order && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 text-center py-2">
-          <span className="text-4xl">✅</span>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ background: "#22c55e" }}>
+            <Check size={32} className="text-white" strokeWidth={2.5} />
+          </div>
           <p className="text-sm font-bold text-gray-900">Vorbestellung bestätigt!</p>
           <p className="text-xs text-gray-500">Abholung um {order.scheduledTime} bei {merchantName}</p>
           <p className="text-xs font-mono text-gray-400">{order.token}</p>

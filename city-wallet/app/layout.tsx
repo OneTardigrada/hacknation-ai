@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CityPulse — Context-Aware City Intelligence",
+  title: "Mylo — Context-Aware City Intelligence",
   description: "Generative AI-powered contextual offers for the city · DSV-Gruppe",
 };
 

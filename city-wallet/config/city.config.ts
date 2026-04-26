@@ -17,6 +17,10 @@ export interface MerchantConfig {
   tagline?: string;
   /** Simulated opening hours in 24h local time. close > open ⇒ same day. */
   openingHours?: { open: number; close: number };
+  /** Has an outdoor seating area / Schanigarten — boosted for sunny weather. */
+  hasGuestGarden?: boolean;
+  /** Tags products that win when the weather matches (sun → cold drinks/ice). */
+  weatherAffinity?: Array<"sunny" | "cold" | "rain" | "snow">;
 }
 
 export interface EventSourceConfig {
@@ -71,6 +75,8 @@ export const CAFE_MULLER: MerchantConfig = {
   heroImage: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=800&q=80&auto=format&fit=crop",
   tagline: "Wiener Kaffeehaus-Kultur seit 1923",
   openingHours: { open: 7, close: 22 },
+  hasGuestGarden: true,
+  weatherAffinity: ["sunny", "cold"],
 };
 
 export const SMOOTHIE_BAR: MerchantConfig = {
@@ -80,7 +86,7 @@ export const SMOOTHIE_BAR: MerchantConfig = {
   lat: 48.20015,
   lon: 16.35563,
   maxDiscount: 15,
-  productFocus: "Protein Shakes",
+  productFocus: "Protein Shakes & kalte Smoothies",
   tone: "energetic",
   goal: "brand_awareness",
   quietHours: [{ start: 14, end: 17 }],
@@ -89,6 +95,8 @@ export const SMOOTHIE_BAR: MerchantConfig = {
   heroImage: "https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=800&q=80&auto=format&fit=crop",
   tagline: "Cold-pressed juices & power smoothies",
   openingHours: { open: 7, close: 21 },
+  hasGuestGarden: true,
+  weatherAffinity: ["sunny"],
 };
 
 export const BAKERY: MerchantConfig = {
@@ -110,14 +118,14 @@ export const BAKERY: MerchantConfig = {
 };
 
 export const VIENNA_EXTRA_MERCHANTS: MerchantConfig[] = [
-  { id: "cafe-central", name: "Café Central", category: "cafe", lat: 48.21042, lon: 16.36636, maxDiscount: 18, productFocus: "Wiener Melange", tone: "warm", goal: "brand_awareness", quietHours: [{ start: 14, end: 16 }], busyHours: [{ start: 9, end: 11 }], emoji: "☕", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Cafe_Central_Wien_2017_3.jpg/640px-Cafe_Central_Wien_2017_3.jpg", tagline: "Traditionskaffeehaus seit 1876", openingHours: { open: 7, close: 22 } },
-  { id: "cafe-sacher", name: "Café Sacher", category: "cafe", lat: 48.20389, lon: 16.36916, maxDiscount: 12, productFocus: "Sachertorte", tone: "warm", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 10, end: 12 }], emoji: "🍰", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Hotel_Sacher_-_panoramio.jpg/640px-Hotel_Sacher_-_panoramio.jpg", tagline: "Original Sacher-Torte", openingHours: { open: 8, close: 23 } },
-  { id: "cafe-hawelka", name: "Café Hawelka", category: "cafe", lat: 48.20871, lon: 16.36985, maxDiscount: 15, productFocus: "Buchteln & Kaffee", tone: "warm", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 17 }], busyHours: [{ start: 19, end: 22 }], emoji: "☕", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Cafe_Hawelka_2014a.jpg/640px-Cafe_Hawelka_2014a.jpg", tagline: "Bohemian Kaffeehaus", openingHours: { open: 8, close: 24 } },
+  { id: "cafe-central", name: "Café Central", category: "cafe", lat: 48.21042, lon: 16.36636, maxDiscount: 18, productFocus: "Wiener Melange", tone: "warm", goal: "brand_awareness", quietHours: [{ start: 14, end: 16 }], busyHours: [{ start: 9, end: 11 }], emoji: "☕", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Cafe_Central_Wien_2017_3.jpg/640px-Cafe_Central_Wien_2017_3.jpg", tagline: "Traditionskaffeehaus seit 1876", openingHours: { open: 7, close: 22 }, hasGuestGarden: true, weatherAffinity: ["sunny", "cold"] },
+  { id: "cafe-sacher", name: "Café Sacher", category: "cafe", lat: 48.20389, lon: 16.36916, maxDiscount: 12, productFocus: "Sachertorte", tone: "warm", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 10, end: 12 }], emoji: "🍰", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Hotel_Sacher_-_panoramio.jpg/640px-Hotel_Sacher_-_panoramio.jpg", tagline: "Original Sacher-Torte", openingHours: { open: 8, close: 23 }, hasGuestGarden: true, weatherAffinity: ["sunny"] },
+  { id: "cafe-hawelka", name: "Café Hawelka", category: "cafe", lat: 48.20871, lon: 16.36985, maxDiscount: 15, productFocus: "Buchteln & Kaffee", tone: "warm", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 17 }], busyHours: [{ start: 19, end: 22 }], emoji: "☕", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Cafe_Hawelka_2014a.jpg/640px-Cafe_Hawelka_2014a.jpg", tagline: "Bohemian Kaffeehaus", openingHours: { open: 8, close: 24 }, weatherAffinity: ["cold", "rain"] },
   { id: "demel", name: "Demel", category: "bakery", lat: 48.20929, lon: 16.36677, maxDiscount: 10, productFocus: "K. u. K. Hofzuckerbäcker", tone: "factual", goal: "brand_awareness", quietHours: [{ start: 14, end: 16 }], busyHours: [{ start: 11, end: 14 }], emoji: "🧁", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Wien_-_Konditorei_Demel_%282%29.JPG/640px-Wien_-_Konditorei_Demel_%282%29.JPG", tagline: "Hofzuckerbäcker seit 1786", openingHours: { open: 9, close: 19 } },
-  { id: "aida", name: "Aida Wien", category: "cafe", lat: 48.20801, lon: 16.37196, maxDiscount: 20, productFocus: "Mehlspeisen", tone: "warm", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 16 }], busyHours: [{ start: 8, end: 10 }], emoji: "🍰", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Wien_01_Stock-im-Eisen-Platz_a.jpg/640px-Wien_01_Stock-im-Eisen-Platz_a.jpg", tagline: "Pink Pastel Kaffeehaus", openingHours: { open: 7, close: 22 } },
-  { id: "naschmarkt-deli", name: "Naschmarkt Deli", category: "restaurant", lat: 48.19867, lon: 16.36347, maxDiscount: 15, productFocus: "Mediterranean Brunch", tone: "energetic", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 12, end: 14 }], emoji: "🥗", heroImage: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&q=80&auto=format&fit=crop", tagline: "Naschmarkt Brunch Spot", openingHours: { open: 8, close: 23 } },
-  { id: "figlmueller", name: "Figlmüller", category: "restaurant", lat: 48.20889, lon: 16.37469, maxDiscount: 10, productFocus: "Wiener Schnitzel", tone: "warm", goal: "brand_awareness", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 19, end: 21 }], emoji: "🍴", heroImage: "https://images.unsplash.com/photo-1599921841143-2ec7e60d76ec?w=800&q=80&auto=format&fit=crop", tagline: "Heimat des Schnitzels", openingHours: { open: 11, close: 22 } },
-  { id: "plachutta", name: "Plachutta", category: "restaurant", lat: 48.20821, lon: 16.37745, maxDiscount: 12, productFocus: "Tafelspitz", tone: "warm", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 19, end: 21 }], emoji: "🥩", heroImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80&auto=format&fit=crop", tagline: "Tafelspitz-Tradition", openingHours: { open: 11, close: 24 } },
+  { id: "aida", name: "Aida Wien", category: "cafe", lat: 48.20801, lon: 16.37196, maxDiscount: 20, productFocus: "Mehlspeisen & Eisbecher", tone: "warm", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 16 }], busyHours: [{ start: 8, end: 10 }], emoji: "🍰", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Wien_01_Stock-im-Eisen-Platz_a.jpg/640px-Wien_01_Stock-im-Eisen-Platz_a.jpg", tagline: "Pink Pastel Kaffeehaus", openingHours: { open: 7, close: 22 }, hasGuestGarden: true, weatherAffinity: ["sunny"] },
+  { id: "naschmarkt-deli", name: "Naschmarkt Deli", category: "restaurant", lat: 48.19867, lon: 16.36347, maxDiscount: 15, productFocus: "Mediterranean Brunch", tone: "energetic", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 12, end: 14 }], emoji: "🥗", heroImage: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&q=80&auto=format&fit=crop", tagline: "Naschmarkt Brunch Spot", openingHours: { open: 8, close: 23 }, hasGuestGarden: true, weatherAffinity: ["sunny"] },
+  { id: "figlmueller", name: "Figlmüller", category: "restaurant", lat: 48.20889, lon: 16.37469, maxDiscount: 10, productFocus: "Wiener Schnitzel", tone: "warm", goal: "brand_awareness", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 19, end: 21 }], emoji: "🍴", heroImage: "https://images.unsplash.com/photo-1599921841143-2ec7e60d76ec?w=800&q=80&auto=format&fit=crop", tagline: "Heimat des Schnitzels", openingHours: { open: 11, close: 22 }, weatherAffinity: ["cold", "rain"] },
+  { id: "plachutta", name: "Plachutta", category: "restaurant", lat: 48.20821, lon: 16.37745, maxDiscount: 12, productFocus: "Tafelspitz", tone: "warm", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 19, end: 21 }], emoji: "🥩", heroImage: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80&auto=format&fit=crop", tagline: "Tafelspitz-Tradition", openingHours: { open: 11, close: 24 }, hasGuestGarden: true, weatherAffinity: ["cold"] },
   { id: "trzesniewski", name: "Trześniewski", category: "restaurant", lat: 48.20945, lon: 16.36888, maxDiscount: 15, productFocus: "Brötchen", tone: "factual", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 16 }], busyHours: [{ start: 11, end: 14 }], emoji: "🥪", heroImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Trze%C5%9Bniewski_in_Wien.jpg/640px-Trze%C5%9Bniewski_in_Wien.jpg", tagline: "Unaussprechlich gute Brötchen", openingHours: { open: 8, close: 19 } },
   { id: "leberkas-pepi", name: "Leberkas Pepi", category: "restaurant", lat: 48.20768, lon: 16.36812, maxDiscount: 10, productFocus: "Leberkäse", tone: "energetic", goal: "brand_awareness", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 12, end: 14 }], emoji: "🌭", heroImage: "https://images.unsplash.com/photo-1558030006-450675393462?w=800&q=80&auto=format&fit=crop", tagline: "Wiens beste Leberkäse-Semmel", openingHours: { open: 9, close: 20 } },
   { id: "joseph-brot", name: "Joseph Brot", category: "bakery", lat: 48.20156, lon: 16.36681, maxDiscount: 22, productFocus: "Sauerteig & Croissants", tone: "warm", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 18 }], busyHours: [{ start: 7, end: 10 }], emoji: "🥖", heroImage: "https://images.unsplash.com/photo-1568254183919-78a4f43a2877?w=800&q=80&auto=format&fit=crop", tagline: "Slow-fermented Sauerteig", openingHours: { open: 7, close: 19 } },
@@ -128,8 +136,8 @@ export const VIENNA_EXTRA_MERCHANTS: MerchantConfig[] = [
   { id: "steamring-coffee", name: "Steamring Coffee", category: "cafe", lat: 48.19773, lon: 16.36812, maxDiscount: 22, productFocus: "Specialty Coffee", tone: "energetic", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 17 }], busyHours: [{ start: 8, end: 10 }], emoji: "☕", heroImage: "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=800&q=80&auto=format&fit=crop", tagline: "Third-wave roastery", openingHours: { open: 7, close: 18 } },
   { id: "balthasar-coffee", name: "Balthasar Kaffee Bar", category: "cafe", lat: 48.21678, lon: 16.36495, maxDiscount: 18, productFocus: "Espresso & Pour-Over", tone: "energetic", goal: "brand_awareness", quietHours: [{ start: 14, end: 17 }], busyHours: [{ start: 8, end: 10 }], emoji: "☕", heroImage: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80&auto=format&fit=crop", tagline: "Specialty Espresso", openingHours: { open: 7, close: 19 } },
   { id: "fenster-cafe", name: "Fenster Café", category: "cafe", lat: 48.20567, lon: 16.35987, maxDiscount: 20, productFocus: "Take-away Coffee", tone: "energetic", goal: "quiet_hour_fill", quietHours: [{ start: 14, end: 17 }], busyHours: [{ start: 8, end: 10 }], emoji: "☕", heroImage: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=800&q=80&auto=format&fit=crop", tagline: "Coffee aus dem Fenster", openingHours: { open: 7, close: 17 } },
-  { id: "yamm-bar", name: "Yamm! Vegan", category: "smoothie", lat: 48.21368, lon: 16.36214, maxDiscount: 18, productFocus: "Bowls & Smoothies", tone: "energetic", goal: "brand_awareness", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 12, end: 14 }], emoji: "🥤", heroImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80&auto=format&fit=crop", tagline: "Plant-based all day", openingHours: { open: 8, close: 22 } },
-  { id: "swing-kitchen", name: "Swing Kitchen", category: "restaurant", lat: 48.21204, lon: 16.36719, maxDiscount: 16, productFocus: "Vegan Burger", tone: "energetic", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 12, end: 14 }], emoji: "🍔", heroImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80&auto=format&fit=crop", tagline: "100% Plant-based Burger", openingHours: { open: 11, close: 23 } },
+  { id: "yamm-bar", name: "Yamm! Vegan", category: "smoothie", lat: 48.21368, lon: 16.36214, maxDiscount: 18, productFocus: "Bowls & kalte Smoothies", tone: "energetic", goal: "brand_awareness", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 12, end: 14 }], emoji: "🥤", heroImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80&auto=format&fit=crop", tagline: "Plant-based all day", openingHours: { open: 8, close: 22 }, hasGuestGarden: true, weatherAffinity: ["sunny"] },
+  { id: "swing-kitchen", name: "Swing Kitchen", category: "restaurant", lat: 48.21204, lon: 16.36719, maxDiscount: 16, productFocus: "Vegan Burger", tone: "energetic", goal: "upsell", quietHours: [{ start: 15, end: 17 }], busyHours: [{ start: 12, end: 14 }], emoji: "🍔", heroImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80&auto=format&fit=crop", tagline: "100% Plant-based Burger", openingHours: { open: 11, close: 23 }, hasGuestGarden: true },
 ];
 
 export const STUTTGART_CONFIG: CityConfig = {

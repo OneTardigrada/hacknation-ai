@@ -18,6 +18,8 @@ export interface IntentVector {
   mood: "comfort" | "energized" | "time_pressed" | "social";
   priceRange: "budget" | "mid" | "premium";
   merchantProximityBucket: string; // e.g. "cafe_nearby" — never GPS coordinates
+  /** Coarse weather descriptor (no PII): drives Gastgarten/Kaltgetränke nudges. */
+  weatherCache?: { temp: number; condition: string };
 }
 
 function inferNeed(history: string[], hour: number): IntentVector["need"] {
@@ -72,6 +74,7 @@ export function processSignalsLocally(raw: RawSignals): IntentVector {
     mood: inferMood(raw.movementSpeed, raw.hour, raw.appHistory),
     priceRange: inferPriceRange(raw.appHistory),
     merchantProximityBucket: computeProximityBucket(raw.gpsLat, raw.gpsLon),
+    weatherCache: raw.weatherCache,
     // gpsLat and gpsLon are consumed here — never sent to the cloud
   };
 }

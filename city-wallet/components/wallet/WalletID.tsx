@@ -25,7 +25,7 @@ export function WalletID() {
     >
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-semibold uppercase tracking-wider opacity-60">
-          City Wallet ID
+          Mylo ID
         </p>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-green-400" />
