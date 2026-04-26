@@ -176,9 +176,6 @@ The boardgame view uses MapLibre with a custom raster style. If your network blo
 
 Once the dev server is running:
 
-- **Pitch script (60 s teleprompter):** [http://localhost:3000/pitch-script.html](http://localhost:3000/pitch-script.html)
-- **Pitch slides:** [http://localhost:3000/pitch-demo-slides.html](http://localhost:3000/pitch-demo-slides.html)
-- **Demo script (extended):** [http://localhost:3000/pitch-demo-script.html](http://localhost:3000/pitch-demo-script.html)
 - **Tech stack architecture:** [http://localhost:3000/tech-stack.html](http://localhost:3000/tech-stack.html)
 
 You can also open these HTML files directly from disk via `file://` — no server required.
