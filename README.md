@@ -103,12 +103,7 @@ city-wallet/
 │   ├── personas.ts
 │   ├── scenarios.ts
 │   └── preorder.ts
-├── config/city.config.ts
-└── public/
-    ├── pitch-script.html       # 60-second pitch teleprompter
-    ├── pitch-demo-script.html
-    ├── pitch-demo-slides.html
-    └── tech-stack.html         # Architecture diagram
+└── config/city.config.ts
 ```
 
 ---
