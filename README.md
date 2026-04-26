@@ -9,6 +9,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
 
 ---
+<img width="3831" height="2092" alt="image" src="https://github.com/user-attachments/assets/4692a52f-3aad-48e7-841b-b38f7fc7b37c" />
 
 ## Demo videos
 
