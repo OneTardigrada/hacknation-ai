@@ -3,7 +3,7 @@
 > A context-aware, AI-generated offer wallet that turns weather, time, location and merchant goals into one perfect, time-boxed deal.
 > Submitted to the **5th Hack-Nation** hackathon (Agentic AI & Data Engineering track).
 
-![Sparkassen red](https://img.shields.io/badge/brand-Sparkassen%20red-E60000)
+
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6)
